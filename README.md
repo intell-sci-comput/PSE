@@ -1,4 +1,4 @@
-# Discovering physical laws with parallel combinatorial tree search
+# Discovering physical laws with parallel symbolic enumeration
 
 *Official implementation of PSE with its core PSRN (Parallel Symbolic Regression Network) module*
 
@@ -15,7 +15,7 @@
 
 ![SRbench.png](./assets/SRbench.png)
 
-This repository contains the official PyTorch implementation of PSE (Parallel Combinatorial Tree Search): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
+This repository contains the official PyTorch implementation of PSE (Parallel Symbolic Enumeration): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
 
 ## 📥 Installation
 
