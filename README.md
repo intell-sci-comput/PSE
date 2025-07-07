@@ -1,6 +1,6 @@
 # Discovering physical laws with parallel combinatorial tree search
 
-*Official implementation of PCTS (formerly PTS) with its core PSRN (Parallel Symbolic Regression Network) module*
+*Official implementation of PSE with its core PSRN (Parallel Symbolic Regression Network) module*
 
 **Authors:** Kai Ruan, Yilong Xu, Ze-Feng Gao, Yike Guo, Hao Sun, Ji-Rong Wen, Yang Liu
 
@@ -15,7 +15,7 @@
 
 ![SRbench.png](./assets/SRbench.png)
 
-This repository contains the official PyTorch implementation of PCTS (Parallel Combinatorial Tree Search): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
+This repository contains the official PyTorch implementation of PSE (Parallel Combinatorial Tree Search): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
 
 ## 📥 Installation
 
@@ -198,13 +198,13 @@ python study_ablation/drmask/run_without_drmask.py --use_drmask False -g 0
 
 ## 🏆 SRbench Evaluation
 
-To evaluate PCTS's performance on SRbench, follow these steps:
+To evaluate PSE's performance on SRbench, follow these steps:
 
 1. Copy the `SRBenchRegressor` directory into the `algorithm` folder of your SRbench installation.
 
 2. Follow the standard SRbench instructions to run our algorithm.
 
-This setup will allow you to benchmark PCTS using the SRbench, providing a standardized evaluation of its performance alongside other symbolic regression algorithms.
+This setup will allow you to benchmark PSE using the SRbench, providing a standardized evaluation of its performance alongside other symbolic regression algorithms.
 
 ## 📚 Citation
 
