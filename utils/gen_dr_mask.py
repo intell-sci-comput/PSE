@@ -3,7 +3,7 @@ import sys
 sys.path.append(".")
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # set gpu idx here for generating drmask
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # set gpu idx here for generating drmask
 
 import numpy as np
 import sympy
@@ -116,3 +116,4 @@ def generate_dr_mask(n_symbol_layers, n_inputs, ops, save_dir):
 
 if __name__ == "__main__":
     generate_dr_mask()
+
