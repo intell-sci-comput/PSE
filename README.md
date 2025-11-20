@@ -63,7 +63,7 @@ For more detailed parameter settings, please use `psrn-run --help`
 
 ### 📝 CLI Examples
 
-> **Tip**
+> [!TIP]
 > - The last column of the csv should be the target variable
 > - If using a version of PyTorch below 2.0, an error may occur during the `torch.topk` operation.
 > - The experiments were performed on servers with Nvidia A100 (80GB) and Intel(R) Xeon(R) Platinum 8380 CPUs @ 2.30GHz.
