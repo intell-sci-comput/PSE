@@ -12,13 +12,11 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2407.04405-b31b1b.svg)](https://arxiv.org/abs/2407.04405)
 
 
-
-
-![PSRN.jpg](./assets/PSRN.jpg)
-
 <!-- ![fig1.png](./assets/fig1.png)
 
 ![SRbench.png](./assets/SRbench.png) -->
+
+![PSRN.jpg](./assets/PSRN.jpg)
 
 
 This repository contains the official PyTorch implementation of PSE (Parallel Symbolic Enumeration): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
@@ -30,6 +28,12 @@ This repository contains the official PyTorch implementation of PSE (Parallel Sy
 
 ```bash
 pip install psrn
+```
+
+Or build from source (https://github.com/x66ccff/PSRN): 
+
+```bash
+pip install git+https://github.com/x66ccff/PSRN
 ```
 
 ## 🚀 Quickstart with Custom Data
@@ -120,99 +124,29 @@ default_csv = os.path.join(os.path.dirname(__file__), 'data', 'custom_data.csv')
 @click.command()
 @click.option("--experiment_name", default="_", type=str, help="experiment_name")
 @click.option("--gpu_index", "-g", default=0, type=int, help="gpu index used")
-@click.option(
-    "--operators",
-    "-l",
-    default="['Add','Mul','Sub','Div','Identity','Sin','Cos','Exp','Log']",
-    help="operator library",
-)
-@click.option(
-    "--n_down_sample",
-    "-d",
-    default=100,
-    type=int,
-    help="n sample to downsample in PSRN for speeding up",
-)
-@click.option(
-    "--n_inputs",
-    "-i",
-    default=5,
-    type=int,
-    help="PSRN input size (n variables + n constants)",
-)
+@click.option("--operators","-l",default="['Add','Mul','Sub','Div','Identity','Sin','Cos','Exp','Log']",help="operator library")
+@click.option("--n_down_sample","-d",default=100,type=int,help="n sample to downsample in PSRN for speeding up")
+@click.option("--n_inputs","-i",default=5,type=int,help="PSRN input size (n variables + n constants)")
 @click.option("--seed", "-s", default=0, type=int, help="seed")
-@click.option(
-    "--topk",
-    "-k",
-    default=10,
-    type=int,
-    help="number of best expressions to take from PSRN to fit",
-)
+@click.option("--topk","-k",default=10,type=int,help="number of best expressions to take from PSRN to fit")
 @click.option("--use_constant", "-c", default=False, type=bool, help="use const in PSE")
-@click.option(
-    "--probe",
-    "-o",
-    default=None,
-    type=str,
-    help="expression probe, string, PSE will stop if probe is in pf",
-)
-@click.option(
-    "--csvpath",
-    "-q",
-    default=default_csv,
-    type=str,
-    help="path to custom csv file",
-)
-@click.option(
-    "--use_cpu",
-    default=False,
-    type=bool,
-    help="use cpu",
-)
+@click.option("--probe","-o",default=None,type=str,help="expression probe, string, PSE will stop if probe is in pf")
+@click.option("--csvpath","-q",default=default_csv,type=str,help="path to custom csv file")
+@click.option("--use_cpu",default=False,type=bool,help="use cpu")
 @click.option("--time_limit", default=3600, type=int, help="time limit (s)")
-def main(
-    experiment_name,
-    gpu_index,
-    operators,
-    n_down_sample,
-    n_inputs,
-    seed,
-    topk,
-    use_constant,
-    probe,
-    csvpath,
-    use_cpu,
-    time_limit,
-):
+def main(experiment_name, gpu_index, operators, n_down_sample, n_inputs, seed, topk, use_constant, probe, csvpath, use_cpu, time_limit):
     if not use_cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_index)
 
     import torch
-    from .model.regressor import PSRN_Regressor
+    from psrn import PSRN_Regressor
 
     if not use_cpu:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
         device = torch.device("cpu")
-    print(device)
 
-    print(operators)
     operators = eval(operators)
-    print(operators)
-
-    hp = {
-        "operators": operators,
-        "n_down_sample": n_down_sample,
-        "n_inputs": n_inputs,
-        "topk": topk,
-        "seed": seed,
-    }
-
-    path_log = "./log/" + experiment_name + "/"
-
-    if not os.path.exists(path_log):
-        os.makedirs(path_log)
-
     df = pd.read_csv(csvpath, header=None)
 
     Input = df.values[:, :-1].reshape(len(df), -1)
@@ -244,51 +178,28 @@ def main(
     )
 
     start = time.time()
-    try:
-        flag, pareto_ls = regressor.fit(
-            Input,
-            Output,
-            n_down_sample=hp["n_down_sample"],
-            use_threshold=False,
-            threshold=1e-20,
-            probe=probe,
-            prun_const=True,
-            prun_ndigit=6,
-            top_k=topk,
-        )
-        end = time.time()
-        time_cost = end - start
+    flag, pareto_ls = regressor.fit(
+        Input,
+        Output,
+        n_down_sample=n_down_sample,
+        use_threshold=False,
+        threshold=1e-20,
+        probe=probe,
+        prun_const=True,
+        prun_ndigit=6,
+        top_k=topk,
+    )
+    end = time.time()
+    time_cost = end - start
 
-        crits = ["reward", "mse"]
+    pareto_ls = regressor.display_expr_table(sort_by='mse') # or 'reward'
 
-        for crit in crits:
-            print("Pareto Front sort by {}".format(crit))
-            pareto_ls = regressor.display_expr_table(sort_by=crit)
+    expr_str, reward, loss, complexity = pareto_ls[0]
+    print('Found:', expr_str, 'time_cost', time_cost)
 
-        expr_str, reward, loss, complexity = pareto_ls[0]
-        expr_sympy = sp.simplify(expr_str)
-
-        print(expr_str)
-
-        print("time_cost", time_cost)
-        if flag:
-            print("[*** Found Expr ! ***]")
-
-        print(expr_sympy)
-    except Exception as e:
-        if 'memory' in str(e):
-            print(e)
-            print('='*100)
-            print('OOM! Please try to reduce the number of input slots (-i) of PSRN or the number of operators (-l)')
-        else:
-            raise e
-
-if __name__ == "__main__":
-    main()
 ```
 
 </details>
-
 
 ## Reproducing Guides
 
