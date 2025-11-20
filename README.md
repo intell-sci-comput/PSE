@@ -9,14 +9,16 @@
 ![License](https://img.shields.io/badge/License-MIT-2196F3.svg)
 ![Stars](https://img.shields.io/github/stars/intell-sci-comput/PTS)
 ![Forks](https://img.shields.io/github/forks/intell-sci-comput/PTS)
-<!-- [![arXiv](https://img.shields.io/badge/arXiv-2407.04405-b31b1b.svg)](https://arxiv.org/abs/2407.04405) -->
+[![arXiv](https://img.shields.io/badge/arXiv-2407.04405-b31b1b.svg)](https://arxiv.org/abs/2407.04405)
 
+
+
+
+![PSRN.jpg](./assets/PSRN.jpg)
 
 <!-- ![fig1.png](./assets/fig1.png)
 
 ![SRbench.png](./assets/SRbench.png) -->
-
-![PSRN.jpg](./assets/PSRN.jpg)
 
 
 This repository contains the official PyTorch implementation of PSE (Parallel Symbolic Enumeration): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
