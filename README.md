@@ -211,11 +211,13 @@ This setup will allow you to benchmark PSE using the SRbench, providing a standa
 If you use this work, please cite:
 
 ```bibtex
-@article{arxiv:2407.04405,
-  author     = {Ruan, Kai and Gao, Ze-Feng and Guo, Yike and Sun, Hao and Wen, Ji-Rong and Liu, Yang},
-  title      = {Discovering symbolic expressions with parallelized tree search},
-  journal    = {arXiv preprint arXiv:2407.04405},
-  year       = {2024},
-  url        = {https://arxiv.org/abs/2407.04405}
+@article{ruan2025discovering,
+  author     = {Ruan, Kai and Xu, Yilong and Gao, Ze-Feng and Guo, Yike and Sun, Hao and Wen, Ji-Rong and Liu, Yang},
+  title      = {Discovering physical laws with parallel symbolic enumeration},
+  journal    = {Nature Computational Science},
+  year       = {2025},
+  doi        = {10.1038/s43588-025-00904-8},
+  url        = {https://www.nature.com/articles/s43588-025-00904-8}
 }
 ```
+
