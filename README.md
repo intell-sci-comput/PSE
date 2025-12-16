@@ -66,6 +66,19 @@ Now, you can use `psrn-run` with custom data, use the following arguments:
   --experiment_name TEXT       experiment_name
   --help                       Show this message and exit.
 ```
+
+    Examples
+    ========
+    >>> #   input data
+    >>> #  ____^______
+    >>> # /           |
+    >>> # ['x',      'y',   'x+x',        '1.5',      '3']
+    >>> # <-n_variables->
+    >>> #                 <-n_cross->
+    >>> #                            <-trying_const_num->
+    >>> # <-----------------n_inputs--------------------->
+
+
 For more detailed parameter settings, please use `psrn-run --help`
 
 ### 📝 CLI Examples
@@ -108,10 +121,11 @@ psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False -l "['Add','Mul','SemiSub'
 ```
 
 **You can also reduce the number of layers to save VRAM (default is 3)
-so that you can use more inputs  (e.g. 30 input PSRN, the rest 20 will be base subtrees)** 
+so that you can use more inputs  (e.g. 70 input PSRN, the rest 20 will be cross subtrees)** 
+
 
 ```bash
-psrn-run --csvpath ./many_cols.csv --n_symbol_layers 2 -g 0 -i 30 -c False -l "['Add','Mul','SemiSub','SemiDiv','Identity']" 
+psrn-run --csvpath ./50_cols_of_x_data.csv --n_symbol_layers 2 -g 0 -i 70 -c False -l "['Add','Mul','SemiSub','SemiDiv','Identity']" 
 ```
 
 If you want to change the source code, please use the following steps:
@@ -243,6 +257,7 @@ If you use this work, please cite:
   url        = {https://www.nature.com/articles/s43588-025-00904-8}
 }
 ```
+
 
 
 
