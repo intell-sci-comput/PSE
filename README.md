@@ -46,6 +46,7 @@ Now, you can use `psrn-run` with custom data, use the following arguments:
   -q, --csvpath TEXT           path to custom csv file
 
   -l, --operators         operator library (e.g., "['Add','Mul','Identity','Tanh','Abs']")
+  --n_symbol_layers            number of symbol layers (default=3)
   -i, --n_inputs INTEGER       PSRN input size (n variables + n constants)
   -c, --use_constant BOOLEAN   use const in PSE
 
@@ -79,32 +80,56 @@ For more detailed parameter settings, please use `psrn-run --help`
 To run the script with build-in custom data with an expression probe (the algorithm will stop when it finds the expression or its symbolic equivalents):
 
 ```bash
-psrn-run -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2"
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2"
 ```
 
 Without an expression probe:
 
 ```bash
-psrn-run -g 0 -i 5 -c False
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False
 ```
 
 For limited VRAM (or when the ground truth expression is expected to be simple):
 
 ```bash
-psrn-run -g 0 -i 3 -c False --probe "(exp(x)-exp(-x))/2"
+psrn-run --csvpath ./your_data.csv -g 0 -i 3 -c False --probe "(exp(x)-exp(-x))/2"
 ```
 
 To customize the operator library:
 
 ```bash
-psrn-run -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2" -l "['Add','Mul','Identity','Tanh','Abs']"
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2" -l "['Add','Mul','Identity','Tanh','Abs']"
 ```
 
 For custom data paths and operators:
 
 ```bash
-psrn-run -g 0 -i 5 -c False -l "['Add','Mul','SemiSub','SemiDiv','Identity']" --csvpath ./your_data.csv
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False -l "['Add','Mul','SemiSub','SemiDiv','Identity']" 
 ```
+
+**You can also reduce the number of layers to save VRAM (default is 3)
+so that you can use more inputs  (e.g. 30 input PSRN, the rest 20 will be base subtrees)** 
+
+```bash
+psrn-run --csvpath ./many_cols.csv --n_symbol_layers 2 -g 0 -i 30 -c False -l "['Add','Mul','SemiSub','SemiDiv','Identity']" 
+```
+
+If you want to change the source code, please use the following steps:
+
+clone the repo first 
+```bash
+git clone https://github.com/x66ccff/PSRN
+```
+
+then install the repo with edit mode
+```bash
+cd PSRN
+pip install -e .
+```
+
+The `cli.py` is the entrance of the code, and you can change the `PSRN_Regressior` in `regressor.py`
+
+
 
 ## 📝 Python Examples
 
@@ -125,6 +150,7 @@ default_csv = os.path.join(os.path.dirname(__file__), 'data', 'custom_data.csv')
 @click.option("--experiment_name", default="_", type=str, help="experiment_name")
 @click.option("--gpu_index", "-g", default=0, type=int, help="gpu index used")
 @click.option("--operators","-l",default="['Add','Mul','Sub','Div','Identity','Sin','Cos','Exp','Log']",help="operator library")
+@click.option("--n_symbol_layers",default=3,type=int,help="number of symbol layers (default=3)")
 @click.option("--n_down_sample","-d",default=100,type=int,help="n sample to downsample in PSRN for speeding up")
 @click.option("--n_inputs","-i",default=5,type=int,help="PSRN input size (n variables + n constants)")
 @click.option("--seed", "-s", default=0, type=int, help="seed")
@@ -157,6 +183,7 @@ def main(experiment_name, gpu_index, operators, n_down_sample, n_inputs, seed, t
     regressor = PSRN_Regressor(
         variables=variables_name,
         use_const=use_constant,
+        n_symbol_layers=n_symbol_layers,
         device=device,
         token_generator_config={
             "base": {
@@ -201,9 +228,6 @@ def main(experiment_name, gpu_index, operators, n_down_sample, n_inputs, seed, t
 
 </details>
 
-## Reproducing Guides
-
-See [Reproducing Guides](./README-reproduce-guide.md)
 
 ## 📚 Citation
 
@@ -219,4 +243,6 @@ If you use this work, please cite:
   url        = {https://www.nature.com/articles/s43588-025-00904-8}
 }
 ```
+
+
 
