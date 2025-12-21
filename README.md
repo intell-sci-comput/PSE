@@ -249,7 +249,7 @@ If you use this work, please cite:
 
 ```bibtex
 @article{ruan2025discovering,
-  author     = {Ruan, Kai and Xu, Yilong and Gao, Ze-Feng and Guo, Yike and Sun, Hao and Wen, Ji-Rong and Liu, Yang},
+  author     = {Ruan, Kai and Xu, Yilong and Gao, Ze-Feng and Liu, Yang and Guo, Yike and Wen, Ji-Rong and Sun, Hao},
   title      = {Discovering physical laws with parallel symbolic enumeration},
   journal    = {Nature Computational Science},
   year       = {2025},
@@ -257,6 +257,7 @@ If you use this work, please cite:
   url        = {https://www.nature.com/articles/s43588-025-00904-8}
 }
 ```
+
 
 
 
