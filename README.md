@@ -93,7 +93,7 @@ For more detailed parameter settings, please use `psrn-run --help`
 To run the script with build-in custom data with an expression probe (the algorithm will stop when it finds the expression or its symbolic equivalents):
 
 ```bash
-psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2"
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x0)-exp(-x0))/2"
 ```
 
 Without an expression probe:
@@ -105,13 +105,13 @@ psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False
 For limited VRAM (or when the ground truth expression is expected to be simple):
 
 ```bash
-psrn-run --csvpath ./your_data.csv -g 0 -i 3 -c False --probe "(exp(x)-exp(-x))/2"
+psrn-run --csvpath ./your_data.csv -g 0 -i 3 -c False --probe "(exp(x0)-exp(-x0))/2"
 ```
 
 To customize the operator library:
 
 ```bash
-psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x)-exp(-x))/2" -l "['Add','Mul','Identity','Tanh','Abs']"
+psrn-run --csvpath ./your_data.csv -g 0 -i 5 -c False --probe "(exp(x0)-exp(-x0))/2" -l "['Add','Mul','Identity','Tanh','Abs']"
 ```
 
 For custom data paths and operators:
@@ -257,6 +257,7 @@ If you use this work, please cite:
   url        = {https://www.nature.com/articles/s43588-025-00904-8}
 }
 ```
+
 
 
 
