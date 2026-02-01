@@ -248,15 +248,21 @@ def main(experiment_name, gpu_index, operators, n_down_sample, n_inputs, seed, t
 If you use this work, please cite:
 
 ```bibtex
-@article{ruan2025discovering,
-  author     = {Ruan, Kai and Xu, Yilong and Gao, Ze-Feng and Liu, Yang and Guo, Yike and Wen, Ji-Rong and Sun, Hao},
-  title      = {Discovering physical laws with parallel symbolic enumeration},
-  journal    = {Nature Computational Science},
-  year       = {2025},
-  doi        = {10.1038/s43588-025-00904-8},
-  url        = {https://www.nature.com/articles/s43588-025-00904-8}
+@article{Ruan2026Discovering,
+  title     = {Discovering physical laws with parallel symbolic enumeration},
+  author    = {Ruan, Kai and Xu, Yilong and Gao, Ze-Feng and Liu, Yang and Guo, Yike and Wen, Ji-Rong and Sun, Hao},
+  journal   = {Nature Computational Science},
+  volume    = {6},
+  number    = {1},
+  pages     = {53--66},
+  year      = {2026},
+  month     = {jan},
+  publisher = {Springer Nature},
+  doi       = {10.1038/s43588-025-00904-8},
+  url       = {https://doi.org/10.1038/s43588-025-00904-8}
 }
 ```
+
 
 
 
