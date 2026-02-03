@@ -21,6 +21,12 @@
 
 This repository contains the official PyTorch implementation of PSE (Parallel Symbolic Enumeration): A fast and efficient symbolic expression discovery method powered by PSRN (Parallel Symbolic Regression Network). PSRN evaluates millions of symbolic expressions simultaneously on GPU with automated subtree reuse.
 
+## News
+
+[2026/01/30] 🎉🎉🎉 Our paper has been selected as the cover article for Nature Computational Science, Volume 6, Issue 1, January 2026!
+<div align="center">
+  <img src="./assets/ncs_cover.png" alt="Nature Computational Science Cover" style="max-width: 80%; height: auto;">
+</div>
 
 ## 📥 Installation
 
@@ -262,6 +268,7 @@ If you use this work, please cite:
   url       = {https://doi.org/10.1038/s43588-025-00904-8}
 }
 ```
+
 
 
 
