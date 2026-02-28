@@ -7,3 +7,4 @@ notebooks/*
 *.pyc
 model.pt
 log/*
+.direnv
