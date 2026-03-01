@@ -1,0 +1,18 @@
+[package]
+name = "pse"
+version = "0.1.0"
+edition = "2024"
+description = "Rust bindings for PSE (PSRN Symbolic Regression)"
+license = "MIT"
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["auto-initialize"] }
+numpy = "0.22"
+ndarray = "0.16"
+thiserror = "2"
+
+[dev-dependencies]
+approx = "0.5"
+
+[features]
+default = []
