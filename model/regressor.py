@@ -479,6 +479,7 @@ class PSRN_Regressor(nn.Module):
         stage_config="model/stages_config/benchmark.yaml",  # model/stages_config/chaotic.yaml
         token_generator_config="token_generator_config.yaml",
         token_generator="GP",  # MCTS / GP / Random / ...
+        optimizer="Nelder-Mead",
         device="cuda",
     ):
         super(PSRN_Regressor, self).__init__()
@@ -615,6 +616,7 @@ class PSRN_Regressor(nn.Module):
         self.use_strict_pareto = True
         self.use_extra_const = use_extra_const
         self.trying_const_range = [-3, 3]
+        self.optimizer = optimizer
 
     def load_dr_mask(self):
 
@@ -1127,6 +1129,7 @@ class PSRN_Regressor(nn.Module):
             n_symbol_layers=self.n_symbol_layers,
             n_inputs=self.n_inputs,
             trying_const_range=self.trying_const_range,
+            optimizer=self.optimizer,
         )
 
     def fit_LS(self, expr_str, X, Y, variables, min_MSE_raw, add_bias, together):
@@ -1196,7 +1199,7 @@ class PSRN_Regressor(nn.Module):
         expr_c = str(expr_c)
 
         try:
-            result = opt.minimize(get_loss_lm, C0, method="Powell", tol=1e-6)
+            result = opt.minimize(get_loss_lm, C0, method=self.optimizer, tol=1e-6)
             if np.isnan(result.fun):
                 raise ValueError
         except:

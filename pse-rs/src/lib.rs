@@ -104,6 +104,8 @@ pub struct PSRNConfig {
     pub token_generator_config: PathBuf,
     /// Token generator algorithm
     pub token_generator: TokenGenerator,
+    /// Optimizer for scipy.optimize.minimize (default: "Nelder-Mead")
+    pub optimizer: String,
     /// Device to use ("cuda" or "cpu")
     pub device: String,
 }
@@ -123,6 +125,7 @@ impl Default for PSRNConfig {
             stage_config: PathBuf::from("model/stages_config/benchmark.yaml"),
             token_generator_config: PathBuf::from("token_generator_config.yaml"),
             token_generator: TokenGenerator::GP,
+            optimizer: "Nelder-Mead".to_string(),
             device: "cuda".to_string(),
         }
     }
@@ -277,6 +280,7 @@ impl PSRNRegressor {
                 config.token_generator_config.to_string_lossy().as_ref(),
             )?;
             kwargs.set_item("token_generator", config.token_generator.as_str())?;
+            kwargs.set_item("optimizer", &config.optimizer)?;
             kwargs.set_item("device", &config.device)?;
 
             let regressor = regressor_class.call((), Some(&kwargs))?;
@@ -434,12 +438,15 @@ impl PSRNRegressor {
                 const_range_list.get_item(1)?.extract::<f64>()?,
             );
 
+            let optimizer: String = dict.get_item("optimizer")?.unwrap().extract()?;
+
             Ok(RegressorParams {
                 variables,
                 operators,
                 n_symbol_layers,
                 n_inputs,
                 trying_const_range,
+                optimizer,
             })
         })
     }
@@ -453,6 +460,7 @@ pub struct RegressorParams {
     pub n_symbol_layers: usize,
     pub n_inputs: usize,
     pub trying_const_range: (f64, f64),
+    pub optimizer: String,
 }
 
 /// Evaluate an expression string on input data
