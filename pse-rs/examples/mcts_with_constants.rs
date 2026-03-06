@@ -6,7 +6,7 @@
 //!   export PSE_PATH=/path/to/PSE
 
 use ndarray::Array2;
-use pse::{expression_complexity, FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator};
+use pse::{Device, FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator, expression_complexity};
 use std::path::PathBuf;
 
 fn main() -> pse::Result<()> {
@@ -43,7 +43,7 @@ fn main() -> pse::Result<()> {
         stage_config: pse_dir.join("model/stages_config/benchmark.yaml"),
         token_generator_config: pse_dir.join("token_generator_config.yaml"),
         token_generator: TokenGenerator::MCTS,
-        device: "cpu".to_string(),
+        device: Device::Cpu,
         ..Default::default()
     };
 

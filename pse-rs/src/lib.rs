@@ -2,36 +2,32 @@
 //!
 //! This crate provides a Rust interface to the PSE Python library for
 //! symbolic regression using PSRN (Physical Symbol Regression Network).
-//!
-//! # Example
-//!
-//! ```no_run
-//! use pse::{PSRNRegressor, PSRNConfig, FitConfig};
-//! use ndarray::Array2;
-//!
-//! let config = PSRNConfig::default();
-//! let mut regressor = PSRNRegressor::new(config).unwrap();
-//!
-//! let x = Array2::from_shape_vec((100, 2), (0..200).map(|i| i as f64 * 0.1).collect()).unwrap();
-//! let y: Vec<f64> = x.rows().into_iter().map(|row| row[0] * row[1]).collect();
-//!
-//! let fit_config = FitConfig::default();
-//! let result = regressor.fit(x.view(), &y, fit_config).unwrap();
-//!
-//! if let Some(expr) = result.best_expression() {
-//!     println!("Best expression: {}", expr);
-//! }
-//! ```
 
 mod error;
 
-pub use error::{Error, Result};
+use std::{
+    cmp::Ordering,
+    path::PathBuf,
+};
 
+pub use error::{
+    Error,
+    Result,
+};
 use ndarray::ArrayView2;
-use numpy::{PyArray1, PyArray2, PyArrayMethods, ToPyArray};
-use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
-use std::path::PathBuf;
+use numpy::{
+    PyArray1,
+    PyArray2,
+    PyArrayMethods,
+    ToPyArray,
+};
+use pyo3::{
+    prelude::*,
+    types::{
+        PyDict,
+        PyList,
+    },
+};
 
 /// Token generator algorithm for expression search
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -104,10 +100,33 @@ pub struct PSRNConfig {
     pub token_generator_config: PathBuf,
     /// Token generator algorithm
     pub token_generator: TokenGenerator,
-    /// Optimizer for scipy.optimize.minimize (default: "Nelder-Mead")
-    pub optimizer: String,
-    /// Device to use ("cuda" or "cpu")
-    pub device: String,
+    /// The compute device.
+    pub device: Device,
+}
+
+#[derive(Debug, Clone, Default)]
+#[expect(missing_docs, reason = "Self documenting")]
+pub enum Device {
+    #[default]
+    Cpu,
+    Cuda,
+    OpenGl,
+    OpenCl,
+    Vulkan,
+}
+
+impl std::fmt::Display for Device {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Device::*;
+        let s = match self {
+            Cpu => "cpu",
+            Cuda => "cuda",
+            OpenGl => "opengl",
+            OpenCl => "opencl",
+            Vulkan => "vulkan",
+        };
+        write!(f, "{s}")
+    }
 }
 
 impl Default for PSRNConfig {
@@ -125,8 +144,7 @@ impl Default for PSRNConfig {
             stage_config: PathBuf::from("model/stages_config/benchmark.yaml"),
             token_generator_config: PathBuf::from("token_generator_config.yaml"),
             token_generator: TokenGenerator::GP,
-            optimizer: "Nelder-Mead".to_string(),
-            device: "cuda".to_string(),
+            device: Device::default(),
         }
     }
 }
@@ -206,27 +224,26 @@ pub struct FitResult {
 
 impl FitResult {
     /// Get the best expression by MSE
-    pub fn best_expression(&self) -> Option<&str> {
+    pub fn best_expression(&self) -> Option<&ParetoExpression> {
         self.pareto_frontier
             .iter()
-            .min_by(|a, b| a.mse.partial_cmp(&b.mse).unwrap())
-            .map(|e| e.expression.as_str())
+            .min_by(|a, b| a.mse.partial_cmp(&b.mse).unwrap_or(Ordering::Equal))
     }
 
     /// Get the simplest expression
-    pub fn simplest_expression(&self) -> Option<&str> {
-        self.pareto_frontier
-            .iter()
-            .min_by(|a, b| a.complexity.partial_cmp(&b.complexity).unwrap())
-            .map(|e| e.expression.as_str())
+    pub fn simplest_expression(&self) -> Option<&ParetoExpression> {
+        self.pareto_frontier.iter().min_by(|a, b| {
+            a.complexity
+                .partial_cmp(&b.complexity)
+                .unwrap_or(Ordering::Equal)
+        })
     }
 
     /// Get the expression with highest reward
-    pub fn highest_reward_expression(&self) -> Option<&str> {
+    pub fn highest_reward_expression(&self) -> Option<&ParetoExpression> {
         self.pareto_frontier
             .iter()
-            .max_by(|a, b| a.reward.partial_cmp(&b.reward).unwrap())
-            .map(|e| e.expression.as_str())
+            .max_by(|a, b| a.reward.partial_cmp(&b.reward).unwrap_or(Ordering::Equal))
     }
 }
 
@@ -280,8 +297,7 @@ impl PSRNRegressor {
                 config.token_generator_config.to_string_lossy().as_ref(),
             )?;
             kwargs.set_item("token_generator", config.token_generator.as_str())?;
-            kwargs.set_item("optimizer", &config.optimizer)?;
-            kwargs.set_item("device", &config.device)?;
+            kwargs.set_item("device", config.device.to_string())?;
 
             let regressor = regressor_class.call((), Some(&kwargs))?;
 
@@ -299,7 +315,8 @@ impl PSRNRegressor {
 
         // Try to find PSE directory relative to current working directory
         // or use environment variable PSE_PATH
-        let pse_path = std::env::var("PSE_PATH").unwrap_or_else(|_| ".".to_string());
+        let pse_path = std::env::var("PSE_PATH")
+            .unwrap_or_else(|_| "/home/m/MathisWellmann/nexus/PSE".to_string());
 
         path.call_method1("insert", (0, pse_path))?;
         Ok(())
@@ -353,7 +370,10 @@ impl PSRNRegressor {
     }
 
     /// Extract Pareto frontier from Python list
-    fn extract_pareto_frontier(&self, pareto_list: &Bound<'_, PyAny>) -> Result<Vec<ParetoExpression>> {
+    fn extract_pareto_frontier(
+        &self,
+        pareto_list: &Bound<'_, PyAny>,
+    ) -> Result<Vec<ParetoExpression>> {
         let mut frontier = Vec::new();
 
         let iter = pareto_list.iter()?;
@@ -426,19 +446,29 @@ impl PSRNRegressor {
             let result = self.regressor.bind(py).call_method0("get_params")?;
             let dict = result.downcast::<PyDict>()?;
 
-            let variables: Vec<String> = dict.get_item("variables")?.unwrap().extract()?;
-            let operators: Vec<String> = dict.get_item("operators")?.unwrap().extract()?;
-            let n_symbol_layers: usize = dict.get_item("n_symbol_layers")?.unwrap().extract()?;
-            let n_inputs: usize = dict.get_item("n_inputs")?.unwrap().extract()?;
+            let variables: Vec<String> =
+                dict.get_item("variables")?.expect("Has vars").extract()?;
+            let operators: Vec<String> = dict
+                .get_item("operators")?
+                .expect("Has operators")
+                .extract()?;
+            let n_symbol_layers: usize = dict
+                .get_item("n_symbol_layers")?
+                .expect("Has `n_symbol_layers`")
+                .extract()?;
+            let n_inputs: usize = dict
+                .get_item("n_inputs")?
+                .expect("Has `n_inputs`")
+                .extract()?;
 
-            let const_range = dict.get_item("trying_const_range")?.unwrap();
+            let const_range = dict
+                .get_item("trying_const_range")?
+                .expect("Has `trying_const_range`");
             let const_range_list = const_range.downcast::<PyList>()?;
             let trying_const_range = (
                 const_range_list.get_item(0)?.extract::<f64>()?,
                 const_range_list.get_item(1)?.extract::<f64>()?,
             );
-
-            let optimizer: String = dict.get_item("optimizer")?.unwrap().extract()?;
 
             Ok(RegressorParams {
                 variables,
@@ -446,7 +476,6 @@ impl PSRNRegressor {
                 n_symbol_layers,
                 n_inputs,
                 trying_const_range,
-                optimizer,
             })
         })
     }
@@ -455,12 +484,16 @@ impl PSRNRegressor {
 /// Parameters of a fitted regressor
 #[derive(Debug, Clone)]
 pub struct RegressorParams {
+    /// The variables.
     pub variables: Vec<String>,
+    /// The operators.
     pub operators: Vec<String>,
+    /// The number of symbol layers.
     pub n_symbol_layers: usize,
+    /// The number of inputs.
     pub n_inputs: usize,
+    /// The constant range.
     pub trying_const_range: (f64, f64),
-    pub optimizer: String,
 }
 
 /// Evaluate an expression string on input data

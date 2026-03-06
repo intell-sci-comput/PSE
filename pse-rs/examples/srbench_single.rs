@@ -3,16 +3,14 @@
 //! Run with: cargo run --example srbench_single --release
 
 use ndarray::Array2;
-use pse::{FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator};
+use pse::{Device, FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator};
 use pyo3::prelude::*;
 use std::path::PathBuf;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let pse_path = std::env::var("PSE_PATH")
-        .expect("PSE_PATH environment variable must be set");
-    let benchmark_name = std::env::var("BENCHMARK")
-        .unwrap_or_else(|_| "Nguyen-1".to_string());
+    let pse_path = std::env::var("PSE_PATH").expect("PSE_PATH environment variable must be set");
+    let benchmark_name = std::env::var("BENCHMARK").unwrap_or_else(|_| "Nguyen-1".to_string());
 
     println!("Running benchmark: {}", benchmark_name);
 
@@ -33,11 +31,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let x_py = tuple.get_item(0)?;
         let x_shape: Vec<usize> = x_py.getattr("shape")?.extract()?;
-        let x_flat: Vec<f64> = x_py.getattr("flatten")?.call0()?.getattr("tolist")?.call0()?.extract()?;
+        let x_flat: Vec<f64> = x_py
+            .getattr("flatten")?
+            .call0()?
+            .getattr("tolist")?
+            .call0()?
+            .extract()?;
         let x = Array2::from_shape_vec((x_shape[0], x_shape[1]), x_flat).unwrap();
 
         let y_py = tuple.get_item(1)?;
-        let y: Vec<f64> = y_py.getattr("flatten")?.call0()?.getattr("tolist")?.call0()?.extract()?;
+        let y: Vec<f64> = y_py
+            .getattr("flatten")?
+            .call0()?
+            .getattr("tolist")?
+            .call0()?
+            .extract()?;
 
         let use_const: bool = tuple.get_item(2)?.extract()?;
         let expression: String = tuple.get_item(3)?.extract()?;
@@ -64,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         stage_config: pse_dir.join("model/stages_config/benchmark.yaml"),
         token_generator_config: pse_dir.join("token_generator_config.yaml"),
         token_generator: TokenGenerator::GP,
-        device: "cpu".to_string(),
+        device: Device::Cpu,
         ..Default::default()
     };
 
@@ -90,7 +98,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Results ===");
     println!("Converged: {}", result.converged);
     println!("Time: {:.2}s", elapsed.as_secs_f64());
-    println!("Pareto frontier ({} expressions):", result.pareto_frontier.len());
+    println!(
+        "Pareto frontier ({} expressions):",
+        result.pareto_frontier.len()
+    );
 
     for (i, expr) in result.pareto_frontier.iter().enumerate() {
         println!(
@@ -103,7 +114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if let Some(best) = result.best_expression() {
-        println!("\nBest expression: {}", best);
+        println!("\nBest expression: {best:?}");
     }
 
     Ok(())

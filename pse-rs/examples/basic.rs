@@ -6,7 +6,7 @@
 //!   export PSE_PATH=/path/to/PSE
 
 use ndarray::Array2;
-use pse::{FitConfig, PSRNConfig, PSRNRegressor, SortBy, TokenGenerator};
+use pse::{Device, FitConfig, PSRNConfig, PSRNRegressor, SortBy, TokenGenerator};
 use std::path::PathBuf;
 
 fn main() -> pse::Result<()> {
@@ -45,7 +45,7 @@ fn main() -> pse::Result<()> {
         stage_config: pse_dir.join("model/stages_config/benchmark.yaml"),
         token_generator_config: pse_dir.join("token_generator_config.yaml"),
         token_generator: TokenGenerator::GP,
-        device: "cpu".to_string(),
+        device: Device::Cpu,
         ..Default::default()
     };
 
@@ -65,7 +65,10 @@ fn main() -> pse::Result<()> {
     let result = regressor.fit(x.view(), &y_data, fit_config)?;
 
     println!("\nConverged: {}", result.converged);
-    println!("\nPareto frontier ({} expressions):", result.pareto_frontier.len());
+    println!(
+        "\nPareto frontier ({} expressions):",
+        result.pareto_frontier.len()
+    );
 
     // Show top expressions
     for (i, expr) in result.pareto_frontier.iter().take(5).enumerate() {
@@ -80,7 +83,7 @@ fn main() -> pse::Result<()> {
 
     // Get best expression
     if let Some(best) = result.best_expression() {
-        println!("\nBest expression by MSE: {}", best);
+        println!("\nBest expression by MSE: {best:?}");
     }
 
     // Get Pareto frontier sorted by complexity

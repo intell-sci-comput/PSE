@@ -9,7 +9,7 @@
 //!   TOKEN_GENERATOR=GP (default, or MCTS, Random)
 
 use ndarray::Array2;
-use pse::{FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator};
+use pse::{Device, FitConfig, PSRNConfig, PSRNRegressor, TokenGenerator};
 use pyo3::prelude::*;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -135,7 +135,7 @@ fn run_benchmark(
         stage_config: pse_dir.join("model/stages_config/benchmark.yaml"),
         token_generator_config: pse_dir.join("token_generator_config.yaml"),
         token_generator,
-        device: "cpu".to_string(),
+        device: Device::Cpu,
         ..Default::default()
     };
 
