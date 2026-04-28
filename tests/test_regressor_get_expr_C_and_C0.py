@@ -24,6 +24,16 @@ def _fix_missing_mul(expr_str: str) -> str:
     return expr_str
 
 
+def _assert_sympify_raises(expr_str):
+    """sympify can raise SympifyError, SyntaxError, ValueError, or TypeError
+    depending on the SymPy version."""
+    try:
+        sympy.sympify(expr_str)
+        raise AssertionError(f"Expected an error for: {expr_str}")
+    except (sympy.SympifyError, SyntaxError, ValueError, TypeError):
+        pass
+
+
 # ============================================================
 # Unit tests for the regex fix itself
 # ============================================================
@@ -112,54 +122,47 @@ class TestFixMissingMul(unittest.TestCase):
 class TestSympifyFailureWithoutFix(unittest.TestCase):
     """Verify the un-fixed expression cannot be parsed by sympy."""
 
-    def _assert_sympify_raises(self, expr_str):
-        try:
-            sympy.sympify(expr_str)
-            self.fail(f"Expected an error for: {expr_str}")
-        except (sympy.SympifyError, SyntaxError, ValueError, TypeError):
-            pass
-
     def test_issue_18_expression_fails_without_fix(self):
-        self._assert_sympify_raises(
+        _assert_sympify_raises(
             "((C0x8) - 6.929355)"
             "/(-2.465988(C1x1)1 + C2cos((C3x5)/(C4*x0)))"
         )
 
     def test_digit_paren_fails_without_fix(self):
-        self._assert_sympify_raises("2.465988(C1x1)")
+        _assert_sympify_raises("2.465988(C1x1)")
 
     def test_paren_digit_fails_without_fix(self):
-        self._assert_sympify_raises("(C1x1)1")
+        _assert_sympify_raises("(C1x1)1")
 
     def test_decimal_before_paren_fails(self):
-        self._assert_sympify_raises("1.2345(sin(x))")
+        _assert_sympify_raises("1.2345(sin(x))")
 
     def test_integer_before_paren_fails(self):
-        self._assert_sympify_raises("3(x + y)")
+        _assert_sympify_raises("3(x + y)")
 
     def test_paren_before_decimal_fails(self):
-        self._assert_sympify_raises("(x)1.5")
+        _assert_sympify_raises("(x)1.5")
 
     def test_nested_missing_mul_fails(self):
-        self._assert_sympify_raises("(1.5(2 + x))")
+        _assert_sympify_raises("(1.5(2 + x))")
 
     def test_mixed_fixed_and_missing_fails(self):
-        self._assert_sympify_raises("1.5*(C0*x0) + 2.5(C1*x1)1")
+        _assert_sympify_raises("1.5*(C0*x0) + 2.5(C1*x1)1")
 
     def test_paren_integer_paren_fails(self):
-        self._assert_sympify_raises("(x)3(y)")
+        _assert_sympify_raises("(x)3(y)")
 
     def test_power_then_paren_fails(self):
-        self._assert_sympify_raises("x**2(C0*x1)")
+        _assert_sympify_raises("x**2(C0*x1)")
 
     def test_negative_number_before_paren_fails(self):
-        self._assert_sympify_raises("-1.5(x + y)")
+        _assert_sympify_raises("-1.5(x + y)")
 
     def test_nested_function_missing_mul_fails(self):
-        self._assert_sympify_raises("sin(cos(1(x)))")
+        _assert_sympify_raises("sin(cos(1(x)))")
 
     def test_complex_expression_missing_mul_fails(self):
-        self._assert_sympify_raises(
+        _assert_sympify_raises(
             "(C0*x0 + C1)1.5 + sin(C2(x1)2)"
         )
 
@@ -264,6 +267,171 @@ class TestPipelineFunctions(unittest.TestCase):
         )
         self.assertIsInstance(result_expr, sympy.Basic)
         self.assertGreater(len(C0), 0)
+
+
+# ============================================================
+# Tests with complex expressions simulating real to_C_expr output
+# ============================================================
+
+def _simulate_to_C_expr(expr_sympy, variables):
+    """Simulate what to_C_expr does: str() -> wrap ops/vars -> renumber C.
+    This produces the same kind of strings the actual pipeline generates."""
+    s = str(expr_sympy)
+
+    # Step 1: Insert C* before operator names
+    ops = ["sin", "cos", "tan", "log", "asin", "acos", "atan", "sign"]
+    for op in ops:
+        s = s.replace(op, "C*{}".format(op))
+
+    # Step 2: Wrap variables with (C*variable)
+    for var in variables:
+        s = re.sub(
+            r"(?<![a-zA-Z]){}(?![a-zA-Z])".format(var),
+            r"(C*{})".format(var),
+            s,
+        )
+
+    # Step 3: Renumber C to C0, C1, ...
+    cnt = 0
+    def _renumber(m):
+        nonlocal cnt
+        cnt += 1
+        return "C{}".format(cnt - 1)
+    s = re.sub(r"C", _renumber, s)
+    return s
+
+
+class TestComplexPipelineExpressions(unittest.TestCase):
+    """Test the fix on complex expressions that mimic real PSRN pipeline output."""
+
+    def test_complex_rational_expression(self):
+        """Complex rational expression with multiple constants."""
+        # Simulate a realistic pipeline output for a rational expression
+        expr_str = (
+            "(C0*x0 + C1*x1 + C2)"
+            "/"
+            "(C3*x2**2 + C4*x3 + C5)1.5"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
+
+    def test_deeply_nested_trig(self):
+        """Deeply nested trig functions with constants."""
+        expr_str = (
+            "C0*sin(C1*cos(C2*x0))"
+            "+ C3*tan(C4*x1)2.5"
+            "+ C5*log(C6*x2)"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
+
+    def test_multiple_compound_denominators(self):
+        """Multiple compound fractions with missing *."""
+        expr_str = (
+            "(C0*x0 + C1)"
+            "/"
+            "(C2*x1 - C3)2"
+            "+"
+            "(C4*x2 + C5)"
+            "/"
+            "(C6*x3 - C7)3"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
+
+    def test_large_sum_with_missing_star(self):
+        """Many-term sum where each term has missing * patterns."""
+        expr_str = (
+            "1.5(C0*x0)2.0(C1*x1)"
+            "+ 2.5(C2*x2)3.0(C3*x3)"
+            "+ 3.5(C4*x4)4.0(C5*x5)"
+            "+ 4.5(C6*x6)"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
+
+    def test_nested_fractions_with_constants(self):
+        """Nested fraction with constant multiplier missing *."""
+        expr_str = (
+            "((C0*x0 + C1)/(C2*x1 + C3))"
+            "2.0"
+            " + (C4*x2 + C5)"
+            "/(C6*x3 + C7)2"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
+
+    def test_simulated_to_C_expr_roundtrip(self):
+        """Feed a real complex sympy expression through simulated
+        to_C_expr, then verify the fix makes it parseable."""
+        x0, x1, x2 = sympy.symbols("x0 x1 x2")
+        complex_expr = (
+            sympy.sin(x0 * x1) / (x0 + x1)
+            + sympy.cos(x2) * sympy.tan(x0)
+            + sympy.log(x1 + x2) * sympy.exp(x0)
+        )
+        # Simulate what to_C_expr produces
+        simulated = _simulate_to_C_expr(complex_expr, ["x0", "x1", "x2"])
+        # The simulated output should be parseable after the fix
+        try:
+            sympy.sympify(simulated)
+        except (sympy.SympifyError, SyntaxError, ValueError, TypeError):
+            pass  # expected to fail without fix
+        else:
+            # If it parses without fix, that's fine too
+            pass
+        # With the fix, it must parse
+        fixed = _fix_missing_mul(simulated)
+        result = sympy.sympify(fixed)
+        self.assertIsInstance(result, sympy.Basic)
+
+    def test_to_C_expr_output_from_issue_pattern(self):
+        """Reproduce the exact pattern from Issue #18 and verify fix."""
+        # This simulates what to_C_expr produces for a complex fraction
+        # with merged C-symbols and missing *
+        buggy = (
+            "((C0x8) - 6.929355)"
+            "/"
+            "(-2.465988(C1x1)1 + C2cos((C3x5)/(C4*x0)))"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(buggy)
+        with self.subTest("with fix"):
+            fixed = _fix_missing_mul(buggy)
+            result = sympy.sympify(fixed)
+            self.assertIsInstance(result, sympy.Basic)
+            # Note: C2cos is parsed as an UndefinedFunction (not C2*cos),
+            # which is a separate issue from the missing * fix.
+            # The numeric evaluation test is intentionally skipped here.
+
+    def test_complex_chaotic_expression(self):
+        """Expression mimicking chaotic system models (typical PSRN use case)."""
+        expr_str = (
+            "C0*sin(C1*x0 + C2*x1)1.5"
+            "+ C3*cos(C4*x2 - C5)2.0"
+            "+ (C6*x0*x1)/(C7*x2 + C8)3"
+            "+ C9*tan(C10*x0) - 0.5(C11*x1)"
+        )
+        with self.subTest("without fix"):
+            _assert_sympify_raises(expr_str)
+        with self.subTest("with fix"):
+            result = sympy.sympify(_fix_missing_mul(expr_str))
+            self.assertIsInstance(result, sympy.Basic)
 
 
 # ============================================================
