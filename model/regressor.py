@@ -292,6 +292,9 @@ def get_expr_C_and_C0(expr, variables, add_bias=True, use_replace_exponent=False
     """
     expr_sympy = sympy.sympify(expr)
     expr_c = to_C_expr(expr_sympy, variables, use_replace_exponent=use_replace_exponent)
+    # Fix missing '*' operators that sympy.sympify cannot parse
+    expr_c = re.sub(r'(\d)\(', r'\1*(', expr_c)
+    expr_c = re.sub(r'\)(\d)', r')*\1', expr_c)
     expr_c_sympy = sympy.sympify(expr_c)
     expr_c_sympy, dict_c = densify(expr_c_sympy, variables)
     if add_bias:
@@ -300,6 +303,8 @@ def get_expr_C_and_C0(expr, variables, add_bias=True, use_replace_exponent=False
     expr_c_sympy_str, cnt_B = replace_B(expr_c_sympy_str)
     for i in range(cnt_B):
         dict_c[sympy.Symbol("B{}".format(i))] = 0.0
+    expr_c_sympy_str = re.sub(r'(\d)\(', r'\1*(', expr_c_sympy_str)
+    expr_c_sympy_str = re.sub(r'\)(\d)', r')*\1', expr_c_sympy_str)
     expr_c_sympy = sympy.sympify(expr_c_sympy_str)
     expr_dense_sympy, dict_final = finallize_const_name(
         expr_c_sympy, dict_c, add_bias=True
